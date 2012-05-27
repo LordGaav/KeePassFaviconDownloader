@@ -398,6 +398,10 @@ namespace KeePassFaviconDownloader
             Image img = null;
             MemoryStream memStream = new MemoryStream();
 
+            // Store the old ServerCertificateValidationCallback
+            System.Net.Security.RemoteCertificateValidationCallback old_callback = System.Net.ServicePointManager.ServerCertificateValidationCallback;
+            System.Net.ServicePointManager.ServerCertificateValidationCallback = ((sender, certificate, chain, sslPolicyErrors) => true);
+
             try
             {
                 WebRequest webreq = WebRequest.Create(url);
@@ -456,6 +460,11 @@ namespace KeePassFaviconDownloader
                 if (s != null)
                     s.Close();
                 return false;
+            }
+            finally
+            {
+                // Restore old certificate callback
+                System.Net.ServicePointManager.ServerCertificateValidationCallback = old_callback;
             }
 
             try
