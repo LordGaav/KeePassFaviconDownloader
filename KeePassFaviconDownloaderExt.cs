@@ -220,9 +220,17 @@ namespace KeePassFaviconDownloader
 
             string url = pwe.Strings.ReadSafe("URL");
             
-            // If we have no URL, quit
+            // If we have no URL, try the Name next
+            // KeePassHTTP uses Name field to store URL
             if (string.IsNullOrEmpty(url))
-                return;
+            {
+                url = pwe.Strings.ReadSafe("Title");
+                // If Name is also empty, give up
+                if (string.IsNullOrEmpty(url))
+                {
+                    return;
+                }
+            }
 
             // If we have a URL with specific scheme that is not http or https, quit
             if (!url.StartsWith("http://") && !url.StartsWith("https://")
@@ -303,6 +311,11 @@ namespace KeePassFaviconDownloader
             HtmlWeb hw = new HtmlWeb();
             HtmlAgilityPack.HtmlDocument hdoc = null;
 
+            if (!fullURL.StartsWith("https://", StringComparison.InvariantCultureIgnoreCase) && 
+                !fullURL.StartsWith("http://", StringComparison.InvariantCultureIgnoreCase)) {
+                fullURL = protocol + "://" + fullURL;
+            }
+
             try
             {
                 hdoc = hw.Load(fullURL);
@@ -316,43 +329,39 @@ namespace KeePassFaviconDownloader
                 return false;
 
             string faviconLocation = "";
+            string faviconFallback = "";
             try
             {
                 HtmlNodeCollection links = hdoc.DocumentNode.SelectNodes("/html/head/link");
                 for (int i = 0; i < links.Count; i++)
                 {
                     HtmlNode node = links[i];
-                    try
+                    HtmlAttribute r = node.Attributes["rel"];
+                    if (r.Value.ToLower().Contains("shortcut icon"))
                     {
-                        HtmlAttribute r = node.Attributes["rel"];
-                        if (r.Value.ToLower().CompareTo("shortcut icon") == 0 || r.Value.ToLower().CompareTo("icon") == 0)
-                        {
-                            try
-                            {
-                                faviconLocation = node.Attributes["href"].Value;
-                                break;
-                            }
-                            catch (Exception)
-                            {
-                            }
-                        }
+                        faviconLocation = node.Attributes["href"].Value;
+                        break;
                     }
-                    catch (Exception)
+                    else if (r.Value.ToLower().Contains("icon"))
                     {
+                        faviconFallback = node.Attributes["href"].Value;
+                        break;
                     }
                 }
             }
             catch (Exception)
             {
             }
-            if (string.IsNullOrEmpty(faviconLocation))
+            if (string.IsNullOrEmpty(faviconLocation) && string.IsNullOrEmpty(faviconFallback))
                 return false;
+            if (string.IsNullOrEmpty(faviconLocation) && !string.IsNullOrEmpty(faviconFallback))
+                faviconLocation = faviconFallback;
 
             if (!faviconLocation.StartsWith("http://") && !faviconLocation.StartsWith("https://"))
                 if(faviconLocation.StartsWith("/"))
-                    faviconLocation = "http://" + url + faviconLocation;
+                    faviconLocation = protocol + "://" + url + faviconLocation;
                 else
-                    faviconLocation = "http://" + url + "/" + faviconLocation;
+                    faviconLocation = protocol + "://" + url + "/" + faviconLocation;
 
             return getFavicon(faviconLocation, ref ms, ref message);
 
@@ -389,6 +398,10 @@ namespace KeePassFaviconDownloader
             Image img = null;
             MemoryStream memStream = new MemoryStream();
 
+            // Store the old ServerCertificateValidationCallback
+            System.Net.Security.RemoteCertificateValidationCallback old_callback = System.Net.ServicePointManager.ServerCertificateValidationCallback;
+            System.Net.ServicePointManager.ServerCertificateValidationCallback = ((sender, certificate, chain, sslPolicyErrors) => true);
+
             try
             {
                 WebRequest webreq = WebRequest.Create(url);
@@ -398,7 +411,7 @@ namespace KeePassFaviconDownloader
                 
                 if( response==null )
                 {
-                    message += "Could not download favicon(s). This may be a temporary problem so you may want to try again later or post the contents of this error message on the KeePass Favicon Download forums at http://sourceforge.net/projects/keepass-favicon/support. Technical information which may help diagnose the problem is listed below, you can copy it to your clipboard by just clicking on this message and pressing CTRL-C.\n - No response from server";
+                    message += "Could not download favicon(s) from " + url + ". This may be a temporary problem so you may want to try again later or post the contents of this error message on the KeePass Favicon Download forums at http://sourceforge.net/projects/keepass-favicon/support. Technical information which may help diagnose the problem is listed below, you can copy it to your clipboard by just clicking on this message and pressing CTRL-C.\n - No response from server";
                     return false;
                 }
                 if( string.Compare(response.ResponseUri.ToString(), url, StringComparison.InvariantCultureIgnoreCase) != 0 )
@@ -435,7 +448,7 @@ namespace KeePassFaviconDownloader
             catch (WebException webException)
             {
                 // don't show this everytime a website has a missing favicon - it could get old fast.
-                message += "Could not download favicon(s). This may be a temporary problem so you may want to try again later or post the contents of this error message on the KeePass Favicon Download forums at http://sourceforge.net/projects/keepass-favicon/support. Technical information which may help diagnose the problem is listed below, you can copy it to your clipboard by just clicking on this message and pressing CTRL-C.\n" + webException.Status + ": " + webException.Message + ": " + webException.Response;
+                message += "Could not download favicon(s) from " + url + ". This may be a temporary problem so you may want to try again later or post the contents of this error message on the KeePass Favicon Download forums at http://sourceforge.net/projects/keepass-favicon/support. Technical information which may help diagnose the problem is listed below, you can copy it to your clipboard by just clicking on this message and pressing CTRL-C.\n" + webException.Status + ": " + webException.Message + ": " + webException.Response;
                 if (s != null)
                     s.Close();
                 return false;
@@ -443,10 +456,15 @@ namespace KeePassFaviconDownloader
             catch (Exception generalException)
             {
                 // don't show this everytime a website has an invalid favicon - it could get old fast.
-                message += "Could not download favicon(s). This may be a temporary problem so you may want to try again later or post the contents of this error message on the KeePass Favicon Download forums at http://sourceforge.net/projects/keepass-favicon/support. Technical information which may help diagnose the problem is listed below, you can copy it to your clipboard by just clicking on this message and pressing CTRL-C.\n" + generalException.Message + ".";
+                message += "Could not download favicon(s) from " + url + ". This may be a temporary problem so you may want to try again later or post the contents of this error message on the KeePass Favicon Download forums at http://sourceforge.net/projects/keepass-favicon/support. Technical information which may help diagnose the problem is listed below, you can copy it to your clipboard by just clicking on this message and pressing CTRL-C.\n" + generalException.Message + ".";
                 if (s != null)
                     s.Close();
                 return false;
+            }
+            finally
+            {
+                // Restore old certificate callback
+                System.Net.ServicePointManager.ServerCertificateValidationCallback = old_callback;
             }
 
             try
@@ -459,7 +477,7 @@ namespace KeePassFaviconDownloader
             }
             catch (Exception ex)
             {
-                message += "Could not process downloaded favicon. This may be a temporary problem so you may want to try again later or post the contents of this error message on the KeePass Favicon Download forums at http://sourceforge.net/projects/keepass-favicon/support. Technical information which may help diagnose the problem is listed below, you can copy it to your clipboard by just clicking on this message and pressing CTRL-C.\n" + ex.Message + ".";
+                message += "Could not process downloaded favicon from " + url + ". This may be a temporary problem so you may want to try again later or post the contents of this error message on the KeePass Favicon Download forums at http://sourceforge.net/projects/keepass-favicon/support. Technical information which may help diagnose the problem is listed below, you can copy it to your clipboard by just clicking on this message and pressing CTRL-C.\n" + ex.Message + ".";
                 if (s != null)
                     s.Close();
                 return false;
