@@ -324,37 +324,33 @@ namespace KeePassFaviconDownloader
                 return false;
 
             string faviconLocation = "";
+            string faviconFallback = "";
             try
             {
                 HtmlNodeCollection links = hdoc.DocumentNode.SelectNodes("/html/head/link");
                 for (int i = 0; i < links.Count; i++)
                 {
                     HtmlNode node = links[i];
-                    try
+                    HtmlAttribute r = node.Attributes["rel"];
+                    if (r.Value.ToLower().Contains("shortcut icon"))
                     {
-                        HtmlAttribute r = node.Attributes["rel"];
-                        if (r.Value.ToLower().CompareTo("shortcut icon") == 0 || r.Value.ToLower().CompareTo("icon") == 0)
-                        {
-                            try
-                            {
-                                faviconLocation = node.Attributes["href"].Value;
-                                break;
-                            }
-                            catch (Exception)
-                            {
-                            }
-                        }
+                        faviconLocation = node.Attributes["href"].Value;
+                        break;
                     }
-                    catch (Exception)
+                    else if (r.Value.ToLower().Contains("icon"))
                     {
+                        faviconFallback = node.Attributes["href"].Value;
+                        break;
                     }
                 }
             }
             catch (Exception)
             {
             }
-            if (string.IsNullOrEmpty(faviconLocation))
+            if (string.IsNullOrEmpty(faviconLocation) && string.IsNullOrEmpty(faviconFallback))
                 return false;
+            if (string.IsNullOrEmpty(faviconLocation) && !string.IsNullOrEmpty(faviconFallback))
+                faviconLocation = faviconFallback;
 
             if (!faviconLocation.StartsWith("http://") && !faviconLocation.StartsWith("https://"))
                 if(faviconLocation.StartsWith("/"))
