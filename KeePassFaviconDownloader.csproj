@@ -71,7 +71,7 @@
     <PostBuildEvent>echo POSTBUILDSTEP for $(ProjectName)
 
 set KPDir=C:\Program Files (x86)\KeePass Password Safe 2\
-set KPPDir=%25KPDir%25plugins\
+set KPPDir=C:\Temp\plugins\
 set KPPTempDir=%25KPPDir%25$(ProjectName)
 
 IF NOT "$(ConfigurationName)"=="Debug" Goto :NotDebug
