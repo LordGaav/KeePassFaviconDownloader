@@ -223,10 +223,14 @@ namespace KeePassFaviconDownloader
             // If we have no URL, try the Name next
             // KeePassHTTP uses Name field to store URL
             if (string.IsNullOrEmpty(url))
-                url = pwe.Strings.ReadSafe("Name");
+            {
+                url = pwe.Strings.ReadSafe("Title");
                 // If Name is also empty, give up
-                if (string.IsNullOrEmpty(url)) {
+                if (string.IsNullOrEmpty(url))
+                {
                     return;
+                }
+            }
 
             // If we have a URL with specific scheme that is not http or https, quit
             if (!url.StartsWith("http://") && !url.StartsWith("https://")
