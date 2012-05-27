@@ -311,6 +311,11 @@ namespace KeePassFaviconDownloader
             HtmlWeb hw = new HtmlWeb();
             HtmlAgilityPack.HtmlDocument hdoc = null;
 
+            if (!fullURL.StartsWith("https://", StringComparison.InvariantCultureIgnoreCase) && 
+                !fullURL.StartsWith("http://", StringComparison.InvariantCultureIgnoreCase)) {
+                fullURL = protocol + "://" + fullURL;
+            }
+
             try
             {
                 hdoc = hw.Load(fullURL);
@@ -354,9 +359,9 @@ namespace KeePassFaviconDownloader
 
             if (!faviconLocation.StartsWith("http://") && !faviconLocation.StartsWith("https://"))
                 if(faviconLocation.StartsWith("/"))
-                    faviconLocation = "http://" + url + faviconLocation;
+                    faviconLocation = protocol + "://" + url + faviconLocation;
                 else
-                    faviconLocation = "http://" + url + "/" + faviconLocation;
+                    faviconLocation = protocol + "://" + url + "/" + faviconLocation;
 
             return getFavicon(faviconLocation, ref ms, ref message);
 
