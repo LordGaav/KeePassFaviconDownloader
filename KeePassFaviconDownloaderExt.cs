@@ -411,7 +411,7 @@ namespace KeePassFaviconDownloader
                 
                 if( response==null )
                 {
-                    message += "Could not download favicon(s). This may be a temporary problem so you may want to try again later or post the contents of this error message on the KeePass Favicon Download forums at http://sourceforge.net/projects/keepass-favicon/support. Technical information which may help diagnose the problem is listed below, you can copy it to your clipboard by just clicking on this message and pressing CTRL-C.\n - No response from server";
+                    message += "Could not download favicon(s) from " + url + ". This may be a temporary problem so you may want to try again later or post the contents of this error message on the KeePass Favicon Download forums at http://sourceforge.net/projects/keepass-favicon/support. Technical information which may help diagnose the problem is listed below, you can copy it to your clipboard by just clicking on this message and pressing CTRL-C.\n - No response from server";
                     return false;
                 }
                 if( string.Compare(response.ResponseUri.ToString(), url, StringComparison.InvariantCultureIgnoreCase) != 0 )
@@ -448,7 +448,7 @@ namespace KeePassFaviconDownloader
             catch (WebException webException)
             {
                 // don't show this everytime a website has a missing favicon - it could get old fast.
-                message += "Could not download favicon(s). This may be a temporary problem so you may want to try again later or post the contents of this error message on the KeePass Favicon Download forums at http://sourceforge.net/projects/keepass-favicon/support. Technical information which may help diagnose the problem is listed below, you can copy it to your clipboard by just clicking on this message and pressing CTRL-C.\n" + webException.Status + ": " + webException.Message + ": " + webException.Response;
+                message += "Could not download favicon(s) from " + url + ". This may be a temporary problem so you may want to try again later or post the contents of this error message on the KeePass Favicon Download forums at http://sourceforge.net/projects/keepass-favicon/support. Technical information which may help diagnose the problem is listed below, you can copy it to your clipboard by just clicking on this message and pressing CTRL-C.\n" + webException.Status + ": " + webException.Message + ": " + webException.Response;
                 if (s != null)
                     s.Close();
                 return false;
@@ -456,7 +456,7 @@ namespace KeePassFaviconDownloader
             catch (Exception generalException)
             {
                 // don't show this everytime a website has an invalid favicon - it could get old fast.
-                message += "Could not download favicon(s). This may be a temporary problem so you may want to try again later or post the contents of this error message on the KeePass Favicon Download forums at http://sourceforge.net/projects/keepass-favicon/support. Technical information which may help diagnose the problem is listed below, you can copy it to your clipboard by just clicking on this message and pressing CTRL-C.\n" + generalException.Message + ".";
+                message += "Could not download favicon(s) from " + url + ". This may be a temporary problem so you may want to try again later or post the contents of this error message on the KeePass Favicon Download forums at http://sourceforge.net/projects/keepass-favicon/support. Technical information which may help diagnose the problem is listed below, you can copy it to your clipboard by just clicking on this message and pressing CTRL-C.\n" + generalException.Message + ".";
                 if (s != null)
                     s.Close();
                 return false;
@@ -477,7 +477,7 @@ namespace KeePassFaviconDownloader
             }
             catch (Exception ex)
             {
-                message += "Could not process downloaded favicon. This may be a temporary problem so you may want to try again later or post the contents of this error message on the KeePass Favicon Download forums at http://sourceforge.net/projects/keepass-favicon/support. Technical information which may help diagnose the problem is listed below, you can copy it to your clipboard by just clicking on this message and pressing CTRL-C.\n" + ex.Message + ".";
+                message += "Could not process downloaded favicon from " + url + ". This may be a temporary problem so you may want to try again later or post the contents of this error message on the KeePass Favicon Download forums at http://sourceforge.net/projects/keepass-favicon/support. Technical information which may help diagnose the problem is listed below, you can copy it to your clipboard by just clicking on this message and pressing CTRL-C.\n" + ex.Message + ".";
                 if (s != null)
                     s.Close();
                 return false;
